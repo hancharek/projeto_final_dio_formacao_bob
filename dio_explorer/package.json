@@ -1,0 +1,24 @@
+{
+  "name": "dio-explorer",
+  "version": "1.0.0",
+  "description": "DIO Explorer — trilhas, desafios e certificados fictícios da DIO",
+  "main": "src/trilhas.js",
+  "scripts": {
+    "test": "jest --coverage --coverageDirectory=../docs/coverage --verbose",
+    "test:ci": "jest --coverage --coverageDirectory=../docs/coverage --coverageReporters=text --verbose 2>&1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coverageThreshold": {
+      "global": {
+        "lines": 90,
+        "functions": 90,
+        "branches": 85,
+        "statements": 90
+      }
+    }
+  }
+}

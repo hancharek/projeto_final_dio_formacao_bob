@@ -1,0 +1,197 @@
+======================================================================
+RELATÓRIO DE EXECUÇÃO — DIO EXPLORER
+Gerado em: 01/09/2026, 09:28:40
+======================================================================
+
+----------------------------------------------------------------------
+SEÇÃO 1 — RESULTADOS DOS TESTES UNITÁRIOS
+----------------------------------------------------------------------
+
+Suites de teste  : 1 passed, 1 total
+Testes           : 65 passed, 65 total (0 failed)
+Cobertura Stmts  : 100%
+Cobertura Branch : 100%
+Cobertura Funcs  : 100%
+Cobertura Lines  : 100%
+Tempo de execução: ~0.558 s
+
+Grupos testados:
+  [PASS] carregarTrilhas()              — 3 testes
+  [PASS] buscarTrilhasPorTecnologia()   — 8 testes
+  [PASS] formatarPlanoDeEstudos()       — 12 testes
+  [PASS] gerarDesafio()                — 10 testes
+  [PASS] formatarDesafio()             — 8 testes
+  [PASS] gerarCodigoCertificado()       — 3 testes
+  [PASS] dataHoje()                    — 2 testes
+  [PASS] gerarCertificado()            — 13 testes
+  [PASS] Fluxo Completo /trilha→/desafio→/certificado — 6 testes
+
+Threshold configurado: 90% (linhas/funções/statements), 85% (branches)
+Resultado do threshold: APROVADO (cobertura real = 100%)
+
+----------------------------------------------------------------------
+SEÇÃO 2 — /trilha Java — PLANO DE ESTUDOS
+----------------------------------------------------------------------
+
+## 🎓 Plano de Estudos — Formação Java Developer
+
+**Plataforma:** DIO — Digital Innovation One
+**Nível:** Intermediário ao Avançado
+**Total de Módulos:** 14
+**XP Total:** 21.000 XP
+**Vitalício:** ✅ Sim
+
+---
+
+### 🛠️ Tecnologias Abordadas
+- Java
+- Spring Boot
+- Hibernate
+- Maven
+- JUnit
+
+---
+
+### 🏅 Badges Disponíveis
+🥇 **Java Starter**
+🥇 **Spring Hero**
+🥇 **Java Champion**
+
+---
+
+### 🎁 Promoção Ativa
+- Desconto: **25% OFF**
+- Cupom: `JAVA25OFF`
+- Válido até: 2025-09-15
+
+---
+
+### 📡 Próximas Lives ao Vivo
+| 📅 Data | 🎙️ Título | 👨‍🏫 Instrutor |
+|---------|-----------|--------------|
+| 2025-07-20 | Microsserviços com Spring Cloud | Roberto Silva |
+| 2025-08-05 | Java Reativo com WebFlux | Patrícia Oliveira |
+
+
+----------------------------------------------------------------------
+SEÇÃO 3 — /desafio Java intermediario
+----------------------------------------------------------------------
+
+## ⚔️ Desafio DIO — Java | Nível: Intermediário
+
+> *"Cada linha de código é um passo mais perto do seu próximo nível."*
+
+---
+
+### 📋 API de Gerenciamento de Tarefas
+Construa uma API REST com Spring Boot que gerencie uma lista de tarefas (TODO list). Implemente os endpoints CRUD completos, validação de campos obrigatórios e filtro de tarefas por status (pendente/concluída).
+
+---
+
+### 📥 Entrada Esperada
+`POST /tasks { "title": "Estudar Java", "status": "pending" }`
+
+### 📤 Saída Esperada
+`{ "id": 1, "title": "Estudar Java", "status": "pending", "createdAt": "2025-07-14" }`
+
+---
+
+### 💡 Dicas
+- Use @RestController, @RequestBody e @PathVariable
+- Armazene em um Map<Long, Task> em memória ou use H2 em memória
+- Implemente @Valid com @NotBlank para validação
+
+---
+
+### 🧪 Casos de Teste
+**Entrada:** GET /tasks
+**Saída esperada:** Lista com todas as tarefas
+
+**Entrada:** PUT /tasks/1 { "status": "done" }
+**Saída esperada:** Tarefa atualizada com status "done"
+
+**Entrada:** DELETE /tasks/99
+**Saída esperada:** 404 Not Found com mensagem de erro
+
+---
+
+### 🏆 Pontuação
+- **XP:** 900 XP
+- **Tempo estimado:** 2 horas
+
+
+----------------------------------------------------------------------
+SEÇÃO 4 — /certificado João Silva — Formação Java Developer
+----------------------------------------------------------------------
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║          🎓  CERTIFICADO DE CONCLUSÃO  🎓                    ║
+║                  Digital Innovation One                      ║
+║                       dio.me                                 ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+```
+
+---
+
+# 📜 Certificado de Conclusão
+
+**A DIO — Digital Innovation One certifica que:**
+
+## 🏅 João Silva
+
+**concluiu com êxito a formação:**
+
+# 🚀 Formação Java Developer
+
+---
+
+| Campo | Informação |
+|-------|------------|
+| 👤 **Aluno** | João Silva |
+| 🎯 **Trilha** | Formação Java Developer |
+| 📊 **Nível** | Intermediário ao Avançado |
+| 📦 **Módulos Concluídos** | 14 módulos |
+| ⭐ **XP Conquistado** | 21.000 XP |
+| 📅 **Data de Emissão** | 01/09/2026 |
+| 🔑 **Código** | `DIO-2026-902KLU` |
+
+---
+
+### 🛠️ Competências Certificadas
+1. ✅ Java
+2. ✅ Spring Boot
+3. ✅ Hibernate
+4. ✅ Maven
+5. ✅ JUnit
+
+---
+
+### 🏆 Badges Conquistadas
+🥇 Java Starter
+🥇 Spring Hero
+🥇 Java Champion
+
+---
+
+### 🌐 Verificação
+> **https://www.dio.me/certificate/DIO-2026-902KLU**
+
+---
+
+*"O aprendizado contínuo é o caminho para a inovação."*
+**— DIO, Digital Innovation One**
+
+---
+
+```
+Assinado digitalmente pela DIO Platform
+dio.me | educação para o futuro
+```
+
+
+======================================================================
+FIM DO RELATÓRIO
+======================================================================

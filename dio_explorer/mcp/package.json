@@ -1,0 +1,27 @@
+{
+  "name": "dio-explorer-mcp",
+  "version": "1.0.0",
+  "description": "MCP Server do DIO Explorer — acesso remoto às trilhas, desafios e certificados fictícios da DIO",
+  "type": "module",
+  "main": "./build/index.js",
+  "bin": {
+    "dio-explorer-mcp": "./build/index.js"
+  },
+  "files": ["build"],
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/index.js",
+    "start:http": "MCP_TRANSPORT=http node build/index.js",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "express": "^4.18.2",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  }
+}

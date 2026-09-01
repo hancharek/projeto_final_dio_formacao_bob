@@ -1,0 +1,12 @@
+# package directories
+node_modules
+jspm_packages
+.npmrc
+.history/
+.vscode/
+
+#Ignore vscode AI rules
+.github/instructions/codacy.instructions.md
+
+# Relatório de cobertura de testes (gerado pelo Jest)
+docs/coverage/

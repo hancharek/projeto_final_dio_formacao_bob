@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DIO Explorer</title>
+  <style>
+    /* ─── reset & base ─────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --surface2: #21262d;
+      --border:   #30363d;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+      --accent:   #58a6ff;
+      --accent2:  #bc8cff;
+      --green:    #3fb950;
+      --amber:    #d29922;
+      --red:      #f85149;
+      --radius:   8px;
+      --font:     -apple-system, "Segoe UI", system-ui, sans-serif;
+      --mono:     "SFMono-Regular", Consolas, monospace;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font);
+      font-size: 14px;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    button {
+      cursor: pointer;
+      font-family: var(--font);
+      font-size: 13px;
+      border: none;
+      border-radius: var(--radius);
+      padding: 8px 16px;
+      transition: opacity .15s, transform .1s;
+    }
+    button:hover  { opacity: .88; }
+    button:active { transform: scale(.97); }
+    input, select {
+      font-family: var(--font);
+      font-size: 13px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color .15s;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+    select option { background: var(--surface); }
+
+    /* ─── layout ────────────────────────────────────────────────────────────── */
+    .app   { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+    main   { padding: 32px 28px; max-width: 900px; }
+    .page  { display: none; }
+    .page.active { display: block; }
+
+    /* ─── sidebar ───────────────────────────────────────────────────────────── */
+    sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-logo {
+      padding: 24px 20px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-logo h1 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sidebar-logo p { font-size: 11px; color: var(--muted); margin-top: 3px; }
+    .nav { padding: 12px 8px; flex: 1; }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+      user-select: none;
+    }
+    .nav-item:hover    { background: var(--surface2); color: var(--text); }
+    .nav-item.active   { background: var(--surface2); color: var(--accent); font-weight: 600; }
+    .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+    .sidebar-status {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .status-dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--red);
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .status-dot.online { background: var(--green); }
+
+    /* ─── page header ───────────────────────────────────────────────────────── */
+    .page-header { margin-bottom: 24px; }
+    .page-header h2 { font-size: 22px; font-weight: 700; }
+    .page-header p  { color: var(--muted); margin-top: 4px; font-size: 13px; }
+
+    /* ─── cards ─────────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .card + .card { margin-top: 16px; }
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 12px;
+    }
+
+    /* ─── stat grid ─────────────────────────────────────────────────────────── */
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .stat-value { font-size: 26px; font-weight: 700; color: var(--accent); }
+    .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    /* ─── form groups ───────────────────────────────────────────────────────── */
+    .form-row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 16px; flex-wrap: wrap; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .form-group input { width: 220px; }
+    .form-group select { width: 170px; }
+
+    /* ─── buttons ───────────────────────────────────────────────────────────── */
+    .btn-primary { background: var(--accent); color: #000; font-weight: 600; }
+    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-success  { background: var(--green);  color: #000; font-weight: 600; }
+    .btn-small    { padding: 5px 10px; font-size: 12px; }
+    .btn-copy     { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ─── output / markdown render ──────────────────────────────────────────── */
+    .output-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      min-height: 120px;
+      font-size: 13px;
+      line-height: 1.75;
+    }
+    .output-box.empty { color: var(--muted); font-style: italic; }
+    .output-toolbar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    /* rendered markdown */
+    .md h1   { font-size: 20px; margin: 16px 0 8px; color: var(--text); }
+    .md h2   { font-size: 17px; margin: 14px 0 6px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+    .md h3   { font-size: 14px; margin: 12px 0 4px; color: var(--accent2); }
+    .md p    { margin-bottom: 8px; }
+    .md ul, .md ol { padding-left: 20px; margin-bottom: 8px; }
+    .md li   { margin: 3px 0; }
+    .md strong { color: var(--text); font-weight: 600; }
+    .md em   { color: var(--muted); }
+    .md code { font-family: var(--mono); background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; font-size: 12px; color: var(--amber); }
+    .md pre  { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 14px; overflow-x: auto; margin: 10px 0; }
+    .md pre code { background: none; border: none; padding: 0; color: var(--text); }
+    .md table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
+    .md th { background: var(--surface); padding: 7px 12px; border: 1px solid var(--border); color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+    .md td { padding: 7px 12px; border: 1px solid var(--border); }
+    .md tr:nth-child(even) td { background: var(--surface); }
+    .md blockquote { border-left: 3px solid var(--accent2); padding-left: 12px; color: var(--muted); font-style: italic; margin: 8px 0; }
+    .md hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+    /* ─── trail cards list ──────────────────────────────────────────────────── */
+    .trail-list { display: grid; gap: 10px; }
+    .trail-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .trail-card:hover  { border-color: var(--accent); background: var(--surface2); }
+    .trail-card-icon   { font-size: 22px; flex-shrink: 0; }
+    .trail-card-info   { flex: 1; min-width: 0; }
+    .trail-card-name   { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .trail-card-meta   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .trail-card-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 5px; }
+    .pill { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 10px; }
+    .pill-blue   { background: #1c3352; color: var(--accent); }
+    .pill-purple { background: #2a1e45; color: var(--accent2); }
+    .pill-green  { background: #112a1a; color: var(--green); }
+    .pill-amber  { background: #2a200a; color: var(--amber); }
+    .trail-card-xp { font-size: 12px; color: var(--amber); font-weight: 700; flex-shrink: 0; }
+
+    /* ─── search / filter ───────────────────────────────────────────────────── */
+    .search-bar { position: relative; }
+    .search-bar input { width: 100%; padding-left: 32px; }
+    .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; pointer-events: none; }
+    .filter-row { display: flex; gap: 10px; margin: 12px 0 16px; flex-wrap: wrap; }
+    .filter-chip {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background .15s, border-color .15s;
+    }
+    .filter-chip:hover  { border-color: var(--accent); }
+    .filter-chip.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+    /* ─── loading ───────────────────────────────────────────────────────────── */
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { color: var(--muted); font-size: 13px; }
+
+    /* ─── toast ─────────────────────────────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 16px;
+      font-size: 13px;
+      color: var(--text);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .25s, transform .25s;
+      z-index: 999;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ─── responsive ─────────────────────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      .app { grid-template-columns: 1fr; }
+      sidebar { position: static; height: auto; flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid var(--border); }
+      .sidebar-logo { border-bottom: none; border-right: 1px solid var(--border); }
+      .nav { display: flex; padding: 8px; }
+      .sidebar-status { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <sidebar>
+    <div class="sidebar-logo">
+      <h1>🎓 DIO Explorer</h1>
+      <p>Powered by IBM Bob</p>
+    </div>
+    <nav class="nav">
+      <div class="nav-item active" data-page="home">
+        <span class="nav-icon">🏠</span> Início
+      </div>
+      <div class="nav-item" data-page="trilhas">
+        <span class="nav-icon">📚</span> Trilhas
+      </div>
+      <div class="nav-item" data-page="trilha">
+        <span class="nav-icon">🗺️</span> Plano de Estudos
+      </div>
+      <div class="nav-item" data-page="desafio">
+        <span class="nav-icon">⚔️</span> Desafio
+      </div>
+      <div class="nav-item" data-page="certificado">
+        <span class="nav-icon">🏅</span> Certificado
+      </div>
+      <div class="nav-item" data-page="carreira">
+        <span class="nav-icon">🚀</span> Carreiras
+      </div>
+    </nav>
+    <div class="sidebar-status">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Verificando servidor...</span>
+    </div>
+  </sidebar>
+
+  <!-- MAIN CONTENT -->
+  <main>
+
+    <!-- HOME -->
+    <div class="page active" id="page-home">
+      <div class="page-header">
+        <h2>👋 Bem-vindo ao DIO Explorer</h2>
+        <p>Explore trilhas, enfrente desafios e conquiste certificados.</p>
+      </div>
+      <div class="stat-grid" id="statsGrid">
+        <div class="stat-card"><div class="stat-value" id="statTrilhas">—</div><div class="stat-label">Trilhas disponíveis</div></div>
+        <div class="stat-card"><div class="stat-value" id="statNiveis">3</div><div class="stat-label">Níveis de dificuldade</div></div>
+        <div class="stat-card"><div class="stat-value" id="statXpMax">—</div><div class="stat-label">XP máximo</div></div>
+        <div class="stat-card"><div class="stat-value" id="statPromos">—</div><div class="stat-label">Trilhas em promoção</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Começar rapidamente</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:4px;">
+          <button class="btn-primary" onclick="goPage('trilha')">🗺️ Ver plano de estudos</button>
+          <button class="btn-secondary" onclick="goPage('desafio')">⚔️ Gerar desafio</button>
+          <button class="btn-secondary" onclick="goPage('certificado')">🏅 Gerar certificado</button>
+          <button class="btn-secondary" onclick="goPage('carreira')">🚀 Ver carreiras</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <div class="card-title">Trilhas em destaque</div>
+        <div class="trail-list" id="featuredTrails">
+          <div class="loading-text"><span class="spinner"></span>Carregando trilhas...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRILHAS -->
+    <div class="page" id="page-trilhas">
+      <div class="page-header">
+        <h2>📚 Todas as Trilhas</h2>
+        <p>Explore e filtre as <span id="totalCount">65</span> trilhas disponíveis.</p>
+      </div>
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Buscar por nome ou tecnologia..." oninput="filterTrails()" />
+      </div>
+      <div class="filter-row" id="filterChips">
+        <span class="filter-chip active" data-filter="all" onclick="setFilter(this,'all')">Todas</span>
+        <span class="filter-chip" data-filter="Básico" onclick="setFilter(this,'Básico')">Básico</span>
+        <span class="filter-chip" data-filter="Intermediário" onclick="setFilter(this,'Intermediário')">Intermediário</span>
+        <span class="filter-chip" data-filter="Avançado" onclick="setFilter(this,'Avançado')">Avançado</span>
+        <span class="filter-chip" data-filter="promo" onclick="setFilter(this,'promo')">🔥 Em promoção</span>
+        <span class="filter-chip" data-filter="vitalicio" onclick="setFilter(this,'vitalicio')">♾️ Vitalício</span>
+      </div>
+      <div class="trail-list" id="trailList">
+        <div class="loading-text"><span class="spinner"></span>Carregando trilhas...</div>
+      </div>
+    </div>
+
+    <!-- PLANO DE ESTUDOS -->
+    <div class="page" id="page-trilha">
+      <div class="page-header">
+        <h2>🗺️ Plano de Estudos</h2>
+        <p>Informe a tecnologia para ver o plano detalhado da trilha.</p>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tecnologia</label>
+          <input type="text" id="trilhaInput" placeholder="Ex: Java, Python, React..." />
+        </div>
+        <button class="btn-primary" onclick="loadTrilha()">Buscar trilha</button>
+      </div>
+      <div class="output-toolbar">
+        <button class="btn-copy btn-small" onclick="copyOutput('trilhaOutput')">📋 Copiar Markdown</button>
+      </div>
+      <div class="output-box empty md" id="trilhaOutput">
+        O plano de estudos aparecerá aqui...
+      </div>
+    </div>
+
+    <!-- DESAFIO -->
+    <div class="page" id="page-desafio">
+      <div class="page-header">
+        <h2>⚔️ Desafio de Código</h2>
+        <p>Gere um desafio aleatório por tecnologia e nível.</p>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tecnologia</label>
+          <input type="text" id="desafioTech" placeholder="Ex: Java, Python, Go..." />
+        </div>
+        <div class="form-group">
+          <label>Nível</label>
+          <select id="desafioNivel">
+            <option value="basico">Básico</option>
+            <option value="intermediario" selected>Intermediário</option>
+            <option value="avancado">Avançado</option>
+          </select>
+        </div>
+        <button class="btn-primary" onclick="loadDesafio()">⚡ Gerar desafio</button>
+      </div>
+      <div class="output-toolbar">
+        <button class="btn-copy btn-small" onclick="copyOutput('desafioOutput')">📋 Copiar Markdown</button>
+      </div>
+      <div class="output-box empty md" id="desafioOutput">
+        O desafio aparecerá aqui...
+      </div>
+    </div>
+
+    <!-- CERTIFICADO -->
+    <div class="page" id="page-certificado">
+      <div class="page-header">
+        <h2>🏅 Certificado de Conclusão</h2>
+        <p>Gere um certificado fictício para a trilha que você concluiu.</p>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Seu nome completo</label>
+          <input type="text" id="certNome" placeholder="Ex: João Silva" />
+        </div>
+        <div class="form-group">
+          <label>Trilha concluída</label>
+          <input type="text" id="certTrilha" placeholder="Ex: Java, React..." />
+        </div>
+        <button class="btn-success" onclick="loadCertificado()">🎓 Gerar certificado</button>
+      </div>
+      <div class="output-toolbar">
+        <button class="btn-copy btn-small" onclick="copyOutput('certOutput')">📋 Copiar Markdown</button>
+      </div>
+      <div class="output-box empty md" id="certOutput">
+        Seu certificado aparecerá aqui...
+      </div>
+    </div>
+
+    <!-- CARREIRAS (tema novo) -->
+    <div class="page" id="page-carreira">
+      <div class="page-header">
+        <h2>🚀 Explorador de Carreiras Tech</h2>
+        <p>Descubra trilhas de carreira baseadas no seu perfil e tecnologias favoritas.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Qual é o seu perfil?</div>
+        <div class="filter-row" id="careerFilter" style="margin-top:8px;">
+          <span class="filter-chip active" data-career="all" onclick="setCareerFilter(this,'all')">🌐 Todas</span>
+          <span class="filter-chip" data-career="backend" onclick="setCareerFilter(this,'backend')">⚙️ Back-end</span>
+          <span class="filter-chip" data-career="frontend" onclick="setCareerFilter(this,'frontend')">🎨 Front-end</span>
+          <span class="filter-chip" data-career="data" onclick="setCareerFilter(this,'data')">📊 Data & AI</span>
+          <span class="filter-chip" data-career="cloud" onclick="setCareerFilter(this,'cloud')">☁️ Cloud & DevOps</span>
+          <span class="filter-chip" data-career="security" onclick="setCareerFilter(this,'security')">🔐 Segurança</span>
+          <span class="filter-chip" data-career="mobile" onclick="setCareerFilter(this,'mobile')">📱 Mobile</span>
+        </div>
+      </div>
+
+      <div class="trail-list" id="careerList" style="margin-top:16px;">
+        <div class="loading-text"><span class="spinner"></span>Carregando trilhas de carreira...</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ─── configuração ────────────────────────────────────────────────────────────
+const MCP_URL    = 'http://localhost:3333/mcp';
+const MCP_BEARER = '';           // deixe vazio se não usar autenticação
+
+// ─── mapeamento de carreiras ──────────────────────────────────────────────────
+const CAREER_MAP = {
+  backend  : ['Java','Node.js','Python','Go','Rust','C#','PHP','Ruby','Elixir','Scala','Kotlin','NestJS','Spring Boot','FastAPI'],
+  frontend : ['React','Angular','Vue.js','Svelte','Next.js','TypeScript','JavaScript','Astro','CSS','HTML'],
+  data     : ['Python','TensorFlow','Machine Learning','Data Science','NLP','MLOps','Spark','Kafka','Airflow','BigQuery','Power BI','Tableau','R'],
+  cloud    : ['AWS','Azure','GCP','Docker','Kubernetes','Terraform','DevOps','Linux','Ansible','SRE'],
+  security : ['Cybersecurity','Kali Linux','SIEM','Penetration Test','Burp Suite'],
+  mobile   : ['Flutter','Kotlin','Swift','Android','iOS','React Native'],
+};
+
+const CAREER_LABELS = {
+  all:'Todas as carreiras',backend:'Engenheiro(a) Back-end',frontend:'Desenvolvedor(a) Front-end',
+  data:'Engenheiro(a) de Dados & IA',cloud:'Engenheiro(a) Cloud & DevOps',
+  security:'Especialista em Segurança',mobile:'Desenvolvedor(a) Mobile',
+};
+
+// ─── estado ───────────────────────────────────────────────────────────────────
+let allTrails    = [];
+let activeFilter = 'all';
+let careerFilter = 'all';
+
+// ─── navegação ────────────────────────────────────────────────────────────────
+function goPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelector(`.nav-item[data-page="${name}"]`).classList.add('active');
+}
+
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => goPage(item.dataset.page));
+});
+
+// ─── MCP call ─────────────────────────────────────────────────────────────────
+let _reqId = 1;
+async function mcpCall(toolName, args = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (MCP_BEARER) headers['Authorization'] = 'Bearer ' + MCP_BEARER;
+  const res = await fetch(MCP_URL, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      jsonrpc: '2.0', id: _reqId++,
+      method: 'tools/call',
+      params: { name: toolName, arguments: args }
+    })
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message ?? JSON.stringify(data.error));
+  return data.result?.content?.[0]?.text ?? '';
+}
+
+// ─── status do servidor ───────────────────────────────────────────────────────
+async function checkServer() {
+  const dot  = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  try {
+    const r = await fetch('http://localhost:3333/', { signal: AbortSignal.timeout(3000) });
+    if (r.ok) {
+      dot.classList.add('online');
+      text.textContent = 'Servidor online';
+      return true;
+    }
+  } catch (_) {}
+  dot.classList.remove('online');
+  text.textContent = 'Servidor offline';
+  return false;
+}
+
+// ─── carrega trilhas do JSON diretamente (fallback sem servidor) ──────────────
+async function fetchTrails() {
+  // tenta primeiro via MCP, depois via fetch direto
+  try {
+    const text = await mcpCall('listar_trilhas');
+    // parse das linhas "• [#N] Nome — Nível | Techs: ..."
+    const lines = text.split('\n').filter(l => l.startsWith('•'));
+    return lines.map(l => {
+      const m = l.match(/\[#(\d+)\]\s\*\*(.+?)\*\*\s—\s(.+?)\s\|\sTechs:\s(.+)/);
+      if (!m) return null;
+      return { id: +m[1], nome: m[2], nivel: m[3].trim(), tecnologias: m[4].split(',').map(t=>t.trim()), xp_total: 0, badges_disponiveis: [], promocoes: { desconto_percentual: 0 }, vitalicio: false };
+    }).filter(Boolean);
+  } catch(_) {
+    // fallback: busca o JSON diretamente
+    try {
+      const r = await fetch('./data/trilhas_dio.json');
+      if (!r.ok) throw new Error();
+      const db = await r.json();
+      return db.trilhas;
+    } catch(_) { return []; }
+  }
+}
+
+// ─── markdown mínimo ──────────────────────────────────────────────────────────
+function renderMd(text) {
+  if (!text) return '';
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    // code blocks
+    .replace(/```[\w]*\n([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+    // inline code
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    // headers
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^# (.+)$/gm,'<h1>$1</h1>')
+    // bold / italic
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    // hr
+    .replace(/^---$/gm,'<hr>')
+    // blockquote
+    .replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>')
+    // unordered list
+    .replace(/^[-•] (.+)$/gm,'<li>$1</li>')
+    // ordered list
+    .replace(/^\d+\. (.+)$/gm,'<li>$1</li>')
+    // table rows (basic)
+    .replace(/^\|(.+)\|$/gm, row => {
+      const cells = row.split('|').slice(1,-1).map(c=>c.trim());
+      const isHeader = cells.every(c=>c.match(/^[-:]+$/));
+      if (isHeader) return '';
+      return '<tr>' + cells.map(c=>`<td>${c}</td>`).join('') + '</tr>';
+    })
+    // wrap li groups
+    .replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`)
+    // wrap table rows
+    .replace(/(<tr>.*<\/tr>\n?)+/g, m => `<table>${m}</table>`)
+    // paragraphs
+    .replace(/\n\n/g,'</p><p>')
+    .replace(/^([^<\n].+)$/gm, '$1')
+    .replace(/<\/p><p>/g,'</p>\n<p>');
+}
+
+function setOutput(id, text, isEmpty = false) {
+  const el = document.getElementById(id);
+  if (isEmpty) { el.innerHTML = text; el.className = 'output-box empty md'; return; }
+  el.innerHTML = renderMd(text);
+  el.className = 'output-box md';
+}
+
+function setLoading(id) {
+  document.getElementById(id).innerHTML =
+    '<span class="spinner"></span><span class="loading-text"> Gerando conteúdo...</span>';
+  document.getElementById(id).className = 'output-box md';
+}
+
+// ─── /trilha ──────────────────────────────────────────────────────────────────
+async function loadTrilha() {
+  const tech = document.getElementById('trilhaInput').value.trim();
+  if (!tech) { showToast('⚠️ Informe a tecnologia.'); return; }
+  setLoading('trilhaOutput');
+  try {
+    const text = await mcpCall('trilha', { tecnologia: tech });
+    setOutput('trilhaOutput', text);
+  } catch(e) {
+    setOutput('trilhaOutput', `❌ Erro: ${e.message}\n\n_Verifique se o MCP Server está rodando em ${MCP_URL}_`, true);
+  }
+}
+
+// ─── /desafio ─────────────────────────────────────────────────────────────────
+async function loadDesafio() {
+  const tech  = document.getElementById('desafioTech').value.trim();
+  const nivel = document.getElementById('desafioNivel').value;
+  if (!tech) { showToast('⚠️ Informe a tecnologia.'); return; }
+  setLoading('desafioOutput');
+  try {
+    const text = await mcpCall('desafio', { tecnologia: tech, nivel });
+    setOutput('desafioOutput', text);
+  } catch(e) {
+    setOutput('desafioOutput', `❌ Erro: ${e.message}\n\n_Verifique se o MCP Server está rodando em ${MCP_URL}_`, true);
+  }
+}
+
+// ─── /certificado ────────────────────────────────────────────────────────────
+async function loadCertificado() {
+  const nome   = document.getElementById('certNome').value.trim();
+  const trilha = document.getElementById('certTrilha').value.trim();
+  if (!nome || !trilha) { showToast('⚠️ Informe seu nome e a trilha.'); return; }
+  setLoading('certOutput');
+  try {
+    const text = await mcpCall('certificado', { nome_aluno: nome, tecnologia: trilha });
+    setOutput('certOutput', text);
+  } catch(e) {
+    setOutput('certOutput', `❌ Erro: ${e.message}\n\n_Verifique se o MCP Server está rodando em ${MCP_URL}_`, true);
+  }
+}
+
+// ─── renderiza card de trilha ─────────────────────────────────────────────────
+function levelIcon(nivel) {
+  if (nivel.includes('Básico')) return '🟢';
+  if (nivel.includes('Avançado')) return '🔴';
+  return '🟡';
+}
+function domainIcon(nome) {
+  const n = nome.toLowerCase();
+  if (n.includes('java'))      return '☕';
+  if (n.includes('python'))    return '🐍';
+  if (n.includes('react') || n.includes('vue') || n.includes('angular') || n.includes('svelte')) return '⚛️';
+  if (n.includes('node'))      return '🟩';
+  if (n.includes('cloud') || n.includes('aws') || n.includes('azure') || n.includes('gcp')) return '☁️';
+  if (n.includes('devops') || n.includes('docker') || n.includes('kubernetes')) return '🔧';
+  if (n.includes('machine') || n.includes('ia') || n.includes('ai') || n.includes('data')) return '🤖';
+  if (n.includes('security') || n.includes('cyber')) return '🔐';
+  if (n.includes('flutter') || n.includes('kotlin') || n.includes('swift') || n.includes('android') || n.includes('ios')) return '📱';
+  if (n.includes('game') || n.includes('unity') || n.includes('unreal') || n.includes('godot')) return '🎮';
+  if (n.includes('blockchain') || n.includes('web3')) return '⛓️';
+  return '📚';
+}
+function trailCardHtml(t, clickable = true) {
+  const icon  = domainIcon(t.nome);
+  const lvl   = levelIcon(t.nivel);
+  const xp    = t.xp_total ? `${(t.xp_total/1000).toFixed(1)}k XP` : '';
+  const promo = t.promocoes?.desconto_percentual > 0
+    ? `<span class="pill pill-amber">🔥 ${t.promocoes.desconto_percentual}% OFF</span>` : '';
+  const vit   = t.vitalicio ? `<span class="pill pill-purple">♾️ Vitalício</span>` : '';
+  const tech  = (t.tecnologias||[]).slice(0,4).map(tc=>`<span class="pill pill-blue">${tc}</span>`).join('');
+  const click = clickable ? `onclick="selectTrail('${t.tecnologias?.[0] || t.nome}')"` : '';
+  return `
+    <div class="trail-card" ${click}>
+      <div class="trail-card-icon">${icon}</div>
+      <div class="trail-card-info">
+        <div class="trail-card-name">${t.nome}</div>
+        <div class="trail-card-meta">${lvl} ${t.nivel} · ${t.numero_de_modulos || '?'} módulos</div>
+        <div class="trail-card-badges">${tech}${promo}${vit}</div>
+      </div>
+      <div class="trail-card-xp">${xp}</div>
+    </div>`;
+}
+
+function selectTrail(tech) {
+  document.getElementById('trilhaInput').value = tech;
+  goPage('trilha');
+  loadTrilha();
+}
+
+// ─── lista de trilhas com filtro ──────────────────────────────────────────────
+function renderTrailList() {
+  const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  let filtered = allTrails.filter(t => {
+    if (search) {
+      const hay = (t.nome + ' ' + (t.tecnologias||[]).join(' ')).toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    if (activeFilter === 'all') return true;
+    if (activeFilter === 'promo') return t.promocoes?.desconto_percentual > 0;
+    if (activeFilter === 'vitalicio') return t.vitalicio;
+    return t.nivel?.includes(activeFilter);
+  });
+  const el = document.getElementById('trailList');
+  document.getElementById('totalCount').textContent = filtered.length;
+  if (!filtered.length) { el.innerHTML = '<p style="color:var(--muted)">Nenhuma trilha encontrada.</p>'; return; }
+  el.innerHTML = filtered.map(t => trailCardHtml(t)).join('');
+}
+
+function filterTrails() { renderTrailList(); }
+
+function setFilter(el, val) {
+  document.querySelectorAll('#filterChips .filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  activeFilter = val;
+  renderTrailList();
+}
+
+// ─── career page ──────────────────────────────────────────────────────────────
+function renderCareers() {
+  const el = document.getElementById('careerList');
+  let filtered = allTrails;
+  if (careerFilter !== 'all') {
+    const keywords = CAREER_MAP[careerFilter] || [];
+    filtered = allTrails.filter(t =>
+      keywords.some(kw =>
+        t.nome.toLowerCase().includes(kw.toLowerCase()) ||
+        (t.tecnologias||[]).some(tech => tech.toLowerCase().includes(kw.toLowerCase()))
+      )
+    );
+  }
+  if (!filtered.length) { el.innerHTML = '<p style="color:var(--muted)">Nenhuma trilha para este perfil.</p>'; return; }
+
+  // agrupar por domínio e mostrar roteiro de carreira
+  const label = CAREER_LABELS[careerFilter] || 'Todas as carreiras';
+  el.innerHTML = `
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title">🎯 Roteiro para: ${label}</div>
+      <p style="color:var(--muted);font-size:13px;margin-top:4px;">
+        ${filtered.length} trilha(s) recomendada(s) · ordenadas por XP crescente
+      </p>
+    </div>
+    ${filtered
+      .slice().sort((a,b)=>(a.xp_total||0)-(b.xp_total||0))
+      .map(t => trailCardHtml(t))
+      .join('')}
+  `;
+}
+
+function setCareerFilter(el, val) {
+  document.querySelectorAll('#careerFilter .filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  careerFilter = val;
+  renderCareers();
+}
+
+// ─── stats da home ────────────────────────────────────────────────────────────
+function updateStats(trails) {
+  document.getElementById('statTrilhas').textContent = trails.length;
+  const maxXp = Math.max(...trails.map(t=>t.xp_total||0));
+  document.getElementById('statXpMax').textContent = maxXp > 0 ? (maxXp/1000).toFixed(0)+'k' : '—';
+  const promos = trails.filter(t=>t.promocoes?.desconto_percentual > 0).length;
+  document.getElementById('statPromos').textContent = promos;
+}
+
+function renderFeatured(trails) {
+  const el = document.getElementById('featuredTrails');
+  // top 4 por XP
+  const top = trails.slice().sort((a,b)=>(b.xp_total||0)-(a.xp_total||0)).slice(0,4);
+  el.innerHTML = top.map(t => trailCardHtml(t)).join('') || '<p style="color:var(--muted)">Nenhuma trilha disponível.</p>';
+}
+
+// ─── toast ────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ─── copiar markdown ──────────────────────────────────────────────────────────
+function copyOutput(id) {
+  const el = document.getElementById(id);
+  const text = el.innerText;
+  navigator.clipboard.writeText(text).then(() => showToast('✅ Copiado para a área de transferência!'));
+}
+
+// ─── enter nos inputs ─────────────────────────────────────────────────────────
+document.getElementById('trilhaInput').addEventListener('keydown', e => { if(e.key==='Enter') loadTrilha(); });
+document.getElementById('desafioTech').addEventListener('keydown', e => { if(e.key==='Enter') loadDesafio(); });
+
+// ─── init ─────────────────────────────────────────────────────────────────────
+(async () => {
+  await checkServer();
+  const trails = await fetchTrails();
+  allTrails = trails;
+  updateStats(trails);
+  renderFeatured(trails);
+  renderTrailList();
+  renderCareers();
+  setInterval(checkServer, 30000);
+})();
+</script>
+</body>
+</html>
