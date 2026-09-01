@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "dio-explorer": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\hanch\\Bob\\projeto_final_dio_formacao_bob\\dio_explorer\\mcp\\build\\index.js"
+      ],
+      "env": {
+        "MCP_TRANSPORT": "stdio"
+      }
+    },
+    "dio-explorer-http": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\hanch\\Bob\\projeto_final_dio_formacao_bob\\dio_explorer\\mcp\\build\\index.js"
+      ],
+      "env": {
+        "MCP_TRANSPORT": "http",
+        "MCP_PORT": "3333",
+        "MCP_API_KEY": ""
+      },
+      "disabled": true
+    }
+  }
+}

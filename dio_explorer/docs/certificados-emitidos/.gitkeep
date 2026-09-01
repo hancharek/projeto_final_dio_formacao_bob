@@ -1,0 +1,3 @@
+# Certificados gerados pelo comando /certificado são salvos aqui.
+# Esta pasta está listada no .bobignore para não ser rastreada pelo Bob.
+# Mantenha este arquivo para preservar a pasta no git.
